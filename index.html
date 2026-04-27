@@ -32,7 +32,7 @@
 
     main {
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 1fr 340px;
       gap: 24px;
       padding: 24px;
     }
@@ -62,11 +62,48 @@
       margin-top: 0;
     }
 
+    .drop-zone {
+      margin-top: 20px;
+      padding: 24px;
+      border: 2px dashed #555;
+      border-radius: 14px;
+      text-align: center;
+      background: #151515;
+      color: #ccc;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: #fff;
+      background: #222;
+      color: #fff;
+    }
+
+    .drop-zone strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
     .note {
       margin-top: 16px;
       font-size: 14px;
       color: #aaa;
       line-height: 1.5;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #888;
+      margin-top: 10px;
+      line-height: 1.4;
     }
 
     @media (max-width: 850px) {
@@ -94,6 +131,7 @@
   <main>
     <section class="viewer-panel">
       <model-viewer
+        id="viewer"
         src="sample.glb"
         alt="A 3D GLB model"
         camera-controls
@@ -106,15 +144,84 @@
 
     <aside class="info-panel">
       <h2>Model Info</h2>
-      <p><strong>Name:</strong> Sample GLB</p>
-      <p><strong>Format:</strong> .glb</p>
-      <p><strong>Status:</strong> Loaded successfully</p>
+      <p><strong>Name:</strong> <span id="modelName">Sample GLB</span></p>
+      <p><strong>Format:</strong> <span id="modelFormat">.glb</span></p>
+      <p><strong>Status:</strong> <span id="modelStatus">Loaded successfully</span></p>
+
+      <div class="drop-zone" id="dropZone">
+        <strong>Drop GLB Here</strong>
+        Drag a .glb file into this box<br />
+        or click to choose one
+      </div>
+
+      <input type="file" id="fileInput" accept=".glb" />
 
       <div class="note">
-        This first version uses Google model-viewer. Once the model loads correctly,
-        we can add a dropdown, JSON data, thumbnails, and multiple GLB files.
+        This viewer can preview local GLB files directly in the browser.
+      </div>
+
+      <div class="small">
+        Note: Dragging a file here does not upload it to GitHub or Vercel.
+        It only previews the file locally on your machine.
       </div>
     </aside>
   </main>
+
+  <script>
+    const viewer = document.getElementById("viewer");
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const modelName = document.getElementById("modelName");
+    const modelFormat = document.getElementById("modelFormat");
+    const modelStatus = document.getElementById("modelStatus");
+
+    let currentObjectUrl = null;
+
+    function loadGLBFile(file) {
+      if (!file) return;
+
+      if (!file.name.toLowerCase().endsWith(".glb")) {
+        modelStatus.textContent = "Please choose a .glb file";
+        return;
+      }
+
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+      }
+
+      currentObjectUrl = URL.createObjectURL(file);
+      viewer.src = currentObjectUrl;
+
+      modelName.textContent = file.name;
+      modelFormat.textContent = ".glb";
+      modelStatus.textContent = "Loaded local file";
+    }
+
+    dropZone.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      loadGLBFile(file);
+    });
+
+    dropZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropZone.classList.remove("dragover");
+
+      const file = event.dataTransfer.files[0];
+      loadGLBFile(file);
+    });
+  </script>
 </body>
 </html>
